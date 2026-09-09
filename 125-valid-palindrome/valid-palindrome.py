@@ -1,25 +1,18 @@
 class Solution:
-    def isAlphanumeric(self,s):
-        x=ord(s)
-        if 97<=x<=122 or 65<=x<=90 or 48<=x<=57:
-            return True
-        return False
     def isPalindrome(self, s: str) -> bool:
-        s=s.lower()
+        l, r = 0, len(s) - 1
 
-        i=0
-        j=len(s)-1
-
-        while i<j:
-            if not self.isAlphanumeric(s[i]):
-                i+=1
-            elif not self.isAlphanumeric(s[j]):
-                j-=1
-            elif s[i]==s[j]:
-                i+=1
-                j-=1
-            else:
+        while l < r:
+            while l < r and not self.alphaNum(s[l]):
+                l += 1
+            while r > l and not self.alphaNum(s[r]):
+                r -= 1
+            if s[l].lower() != s[r].lower():
                 return False
-
+            l, r = l + 1, r - 1
         return True
-        
+
+    def alphaNum(self, c):
+        return (ord('A') <= ord(c) <= ord('Z') or
+                ord('a') <= ord(c) <= ord('z') or
+                ord('0') <= ord(c) <= ord('9'))
