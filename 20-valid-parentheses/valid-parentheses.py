@@ -1,30 +1,15 @@
 class Solution:
     def isValid(self, s: str) -> bool:
-        n= len(s)
-        if n%2==1:
-            return False
+        stack = []
+        closeToOpen = { ")" : "(", "]" : "[", "}" : "{" }
 
-        st =[]
-
-        for ch in list(s):
-            #OPENING BRACKET
-            if ch=='(' or ch=='{' or ch=='[':
-                st.append(ch)
-            #closing bracket
+        for c in s:
+            if c in closeToOpen:
+                if stack and stack[-1] == closeToOpen[c]:
+                    stack.pop()
+                else:
+                    return False
             else:
-                if len(st)==0:
-                    return False
+                stack.append(c)
 
-                top=st.pop()
-                if ch==')' and top!='(':
-                    return False
-                elif ch=='}' and top!='{':
-                    return False
-                elif ch==']' and top!='[':
-                    return False
-        return len(st)==0
-
-
-
-
-        
+        return True if not stack else False
