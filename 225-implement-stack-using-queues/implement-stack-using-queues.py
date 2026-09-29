@@ -1,5 +1,3 @@
-#225. Implement Stack using Queues
-
 class MyStack:
 
     def __init__(self):
