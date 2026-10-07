@@ -1,29 +1,26 @@
 class Solution:
-    def findMedianSortedArrays(self, nums1: List[int], nums2: List[int]) -> float:
-        if len(nums1) > len(nums2):
-            return self.findMedianSortedArrays(nums2, nums1)
-            
-        x, y = len(nums1), len(nums2)
-        low, high = 0, x
-        
-        while low <= high:
-            partitionX = (low + high) // 2
-            partitionY = (x + y + 1) // 2 - partitionX
-            
-            maxLeftX = float('-inf') if partitionX == 0 else nums1[partitionX - 1]
-            minRightX = float('inf') if partitionX == x else nums1[partitionX]
-            
-            maxLeftY = float('-inf') if partitionY == 0 else nums2[partitionY - 1]
-            minRightY = float('inf') if partitionY == y else nums2[partitionY]
-            
-            if maxLeftX <= minRightY and maxLeftY <= minRightX:
-                if (x + y) % 2 == 0:
-                    return (max(maxLeftX, maxLeftY) + min(minRightX, minRightY)) / 2.0
+    def findMedianSortedArrays(self, nums1, nums2):
+        len1, len2 = len(nums1), len(nums2)
+        i = j = 0
+        median1 = median2 = 0
+
+        for count in range((len1 + len2) // 2 + 1):
+            median2 = median1
+            if i < len1 and j < len2:
+                if nums1[i] > nums2[j]:
+                    median1 = nums2[j]
+                    j += 1
                 else:
-                    return float(max(maxLeftX, maxLeftY))
-            elif maxLeftX > minRightY:
-                high = partitionX - 1
+                    median1 = nums1[i]
+                    i += 1
+            elif i < len1:
+                median1 = nums1[i]
+                i += 1
             else:
-                low = partitionX + 1
-                
-        return 0.0
+                median1 = nums2[j]
+                j += 1
+
+        if (len1 + len2) % 2 == 1:
+            return float(median1)
+        else:
+            return (median1 + median2) / 2.0
