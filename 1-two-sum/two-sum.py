@@ -9,3 +9,7 @@ class Solution:
                 return [dict[rem], i]
 
             dict[nums[i]] = i
+
+            
+
+            
