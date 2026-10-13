@@ -1,96 +1,99 @@
-class ListNode:
-
-    def __init__(self, key, val):
+class DoublyLinkedListNode:
+    def __init__(self, key, value, prev: DoublyLinkedListNode=None, next: DoublyLinkedListNode=None, freq: int=1):
         self.key = key
-        self.val = val
-        self.freq = 1
-        self.prev = None
-        self.next = None
-
-class LinkedList:
-
-    def __init__(self):
-        self.left = ListNode(0, 0)
-        self.right = ListNode(0, 0)
-        self.left.next = self.right
-        self.right.prev = self.left
-        self.size = 0
-
-    def length(self):
-        return self.size
-
-    def pushRight(self, node):
-        prev = self.right.prev
-        prev.next = node
-        node.prev = prev
-        node.next = self.right
-        self.right.prev = node
-        self.size += 1
-
-    def pop(self, node):
-        prev, next = node.prev, node.next
-        prev.next = next
-        next.prev = prev
-        node.prev = None
-        node.next = None
-        self.size -= 1
-
-    def popLeft(self):
-        if self.length() == 0:
-            return None
-        node = self.left.next
-        self.pop(node)
-        return node
+        self.value = value
+        self.prev = prev
+        self.next = next
+        self.freq = freq
 
 class LFUCache:
-
     def __init__(self, capacity: int):
-        self.cap = capacity
-        self.lfuCnt = 0
-        self.nodeMap = {} # Map key -> node
-        # Map frequency -> linkedlist of nodes
-        self.listMap = defaultdict(LinkedList)
+        self.capacity = capacity
+        self.size = 0
 
-    def counter(self, node):
-        cnt = node.freq
-        self.listMap[cnt].pop(node)
+        # Mapping between key and DoublyLinkedListNode value
+        self.cache = {}
 
-        if cnt == self.lfuCnt and self.listMap[cnt].length() == 0:
-            self.lfuCnt += 1
+        # Mapping between frequencies of accessed nodes and end of linked list chain for the frequency
+        self.freq_map = {}
 
-        node.freq += 1
-        self.listMap[node.freq].pushRight(node)
+        # Start of linked list chain will be after a dummy head node - Node to evict
+        self.head = DoublyLinkedListNode(-1, -1, freq=-1)
+        self.tail = DoublyLinkedListNode(-1, -1, freq=-1)
 
+        self.head.next = self.tail
+        self.tail.prev = self.head
 
     def get(self, key: int) -> int:
-        if key not in self.nodeMap:
+
+        if key not in self.cache:
             return -1
-        node = self.nodeMap[key]
-        self.counter(node)
-        return node.val
+        
+        self.updateLFU(self.cache[key])
+        return self.cache[key].value
 
     def put(self, key: int, value: int) -> None:
-        if self.cap == 0:
+        if key in self.cache:
+            node: DoublyLinkedListNode = self.cache[key]
+            node.value = value
+            self.updateLFU(self.cache[key])
             return
+            
+        node = DoublyLinkedListNode(key, value)
 
-        if key in self.nodeMap:
-            node = self.nodeMap[key]
-            node.val = value
-            self.counter(node)
-            return
+        if self.size == self.capacity:
+            self.evictNode()
 
-        if len(self.nodeMap) == self.cap:
-            node = self.listMap[self.lfuCnt].popLeft()
-            self.nodeMap.pop(node.key)
+        self.size += 1
 
-        node = ListNode(key, value)
-        self.nodeMap[key] = node
-        self.listMap[1].pushRight(node)
-        self.lfuCnt = 1
+        if 1 in self.freq_map:
+            nodeToInsertAfter = self.freq_map[1]
+        else:
+            nodeToInsertAfter = self.head
+
+        self.insertNode(nodeToInsertAfter, node)
+
+        self.freq_map[1] = node
+        self.cache[key] = node
+
+    def evictNode(self):
+        nodeToEvict: DoublyLinkedListNode = self.head.next
+
+        if self.freq_map[nodeToEvict.freq] == nodeToEvict:
+            del self.freq_map[nodeToEvict.freq]
+
+        self.head.next = nodeToEvict.next
+        nodeToEvict.next.prev = self.head
+
+        self.size -= 1
+        del self.cache[nodeToEvict.key]
+
+    def insertNode(self, node_a: DoublyLinkedListNode, node_b: DoublyLinkedListNode):
+        node_a.next.prev = node_b
+        node_b.next = node_a.next
+        node_a.next = node_b
+        node_b.prev = node_a
+
+    def updateLFU(self, node: DoublyLinkedListNode):
+        if node.freq + 1 in self.freq_map:
+            nodeToInsertAfter = self.freq_map[node.freq + 1]
+        else:
+            nodeToInsertAfter = self.freq_map[node.freq]
         
+        self.freq_map[node.freq + 1] = node
 
+        if self.freq_map[node.freq] == node:
+            if node.prev.freq == node.freq:
+                self.freq_map[node.freq] = node.prev
+            else:
+                del self.freq_map[node.freq]
 
-# Your LFUCache object will be instantiated and called as such:
-# obj = LFUCache(capacity)
-# param_1 = obj.get(key)
-# obj.put(key,value)
+        node.freq += 1
+
+        if nodeToInsertAfter == node:
+            return
+
+        node.prev.next = node.next
+        node.next.prev = node.prev
+
+        self.insertNode(nodeToInsertAfter, node)
